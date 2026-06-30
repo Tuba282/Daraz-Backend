@@ -10,7 +10,11 @@
     "test": "jest --coverage",
     "test:api": "jest --testPathPattern=tests/api"
   },
-  "keywords": ["ecommerce", "multi-vendor", "marketplace"],
+  "keywords": [
+    "ecommerce",
+    "multi-vendor",
+    "marketplace"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -24,6 +28,7 @@
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^7.1.5",
     "express-validator": "^7.0.1",
+    "google-auth-library": "^10.9.0",
     "helmet": "^7.1.0",
     "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.2",

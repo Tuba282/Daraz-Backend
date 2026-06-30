@@ -4,6 +4,7 @@ const Vendor = require('../models/Vendor');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 const { sendEmail, emailTemplates } = require('../utils/sendEmail');
+let OAuth2Client; try { ({ OAuth2Client } = require('google-auth-library')); } catch (e) { OAuth2Client = require('google-auth-library').OAuth2Client; }
 
 // Helper: send tokens in response + cookie
 const sendTokenResponse = (user, statusCode, res, message = 'Success') => {
@@ -38,6 +39,46 @@ const sendTokenResponse = (user, statusCode, res, message = 'Success') => {
         phone: user.phone,
       },
     });
+
+// @desc    Google Sign-In
+// @route   POST /api/auth/google
+// @access  Public
+exports.googleSignIn = asyncHandler(async (req, res, next) => {
+  const { tokenId } = req.body;
+  if (!tokenId) {
+    return next(new ErrorResponse('Google token is required', 400));
+  }
+
+  const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+  let ticket;
+  try {
+    ticket = await client.verifyIdToken({
+      idToken: tokenId,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+  } catch (err) {
+    return next(new ErrorResponse('Invalid Google token', 401));
+  }
+
+  const payload = ticket.getPayload();
+  const { email, name, picture } = payload;
+
+  // Find existing user or create new one
+  let user = await User.findOne({ email });
+  if (!user) {
+    const randomPassword = crypto.randomBytes(16).toString('hex');
+    user = await User.create({
+      name,
+      email,
+      password: randomPassword,
+      role: 'customer',
+      avatar: picture,
+    });
+  }
+
+  // Issue JWTs
+  sendTokenResponse(user, 200, res, 'Google sign‑in successful');
+});
 };
 
 // @desc    Register user
